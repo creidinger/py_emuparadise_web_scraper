@@ -18,19 +18,18 @@ def get_data(url):
         print('Scrape success')
 
     try:
+        # convert html to a BeautifulSoup Object
         bs = BeautifulSoup(r.text, 'html.parser')
     except Exception as e:
         raise e
 
     try:
+        # find all <a> tages that link to a game
         endpoints = bs.find_all('a', {'class', 'gamelist'})
     except AttributeError as e:
         raise AttributeError('Invalid attribute')
     except Exception as e:
         raise e
-
-    # for e in endpoints:
-    #     print(e.get('href'))
 
     return endpoints
 
@@ -40,20 +39,23 @@ def filter_endpoints(endpoints):
     args:
         endpoints: the list of endpoints received from the scrape
     """
+
     filtered = []
     trash_reg = re.compile(r'(japan|Japan|\(j\)|\(J\)|germany|German|\(g\)|\(G\)|\(s\)|\(S\)|\(f\)|\(F\)|Essential_PlayStation|Interactive_CD_Sampler|PlayStation_Underground_|PlayStation_Picks|_Magazine_|Official_PlayStation_|Official_UK_PlayStation_|_Demo_)')
 
+    # iterate over the list of endpoints and check against the regular
+    # expression above. If no match is found, add the endpoint to the
+    # filtered list.
     for e in endpoints:
         match = trash_reg.search(e.get('href'))
         if not match:
             filtered.append(e.get('href'))
-            # print(e.get('href'))
 
     return filtered
 
 
 def get_game_ids(endpoints):
-    """Split each enpoint down to its game id and append
+    """Split each enpoint down to its unique game id and append
     the ID to a new array
     args:
         endpoints: the filtered list of game endpoints
@@ -69,21 +71,21 @@ def get_game_ids(endpoints):
 
 
 def build_download_links(game_ids):
-    """ make download links for each game ID
+    """Make download links for each game ID
     args:
         game_ids: The list of ids stripped from each endpoint
     """
 
-    site = 'http://50.7.189.186/'
+    # site = 'http://50.7.189.186/'
     site = 'http://www.emuparadise.me/'
 
-    dl_links = []
+    download_links = []
 
     for id in game_ids:
-        dl_url = f"{site}roms/get-download.php?gid={id}&test=true"
-        dl_links.append(dl_url)
+        download_url = f"{site}roms/get-download.php?gid={id}&test=true"
+        download_links.append(download_url)
 
-    return dl_links
+    return download_links
 
 
 games = get_data(
@@ -95,7 +97,8 @@ for f in filtered:
 print(f"total: {len(filtered)}")
 
 game_ids = get_game_ids(endpoints=filtered)
-print(game_ids)
 
 links = build_download_links(game_ids=game_ids)
-print(links)
+for l in links:
+    print(l)
+print(f"total: {len(links)}")
