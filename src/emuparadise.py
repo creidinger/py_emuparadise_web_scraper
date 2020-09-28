@@ -101,6 +101,4 @@ if __name__ == "__main__":
     i = 0
     for m in scrape.games_meta:
         print(m)
-        if i == 100:
-            scrape.download_game(m)
-        i += 1
+        # scrape.download_game(m)
