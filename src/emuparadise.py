@@ -15,25 +15,19 @@ class ScrapeEmuparadise():
         # self.server = 'http://50.7.189.186/'
         self.server = 'http://www.emuparadise.me/'
         self.trash_reg = re.compile(
-            r'(japan|Japan|\(j\)|\(J\)|germany|German|\(g\)|\(G\)|\(s\)|\(S\)|\(f\)|\(F\)|Essential_PlayStation|Interactive_CD_Sampler|PlayStation_Underground_|PlayStation_Picks|_Magazine_|Official_PlayStation_|Official_UK_PlayStation_|_Demo_)')
-        self.game_ids = []
-
+            r'(japan|Japan|\(j\)|\(J\)|germany|German|\(g\)|\(G\)|\(s\)|\(S\)|\(f\)|\(F\)|Essential_PlayStation|Interactive_CD_Sampler|PlayStation_Underground_|PlayStation_Picks|_Magazine_|Official_PlayStation_|Official_UK_PlayStation_|_Demo_|Demo_|_\(Demo\)|Baseball|FIFA|Soccer|Madden|Boxing|Golf|ESPN_|MLB_|NASCAR_|NBA_|NCAA_|NFL_|NHL_|PGA_|WCW_|WWF_|radicalgames|Timeless_Math|Pizza_Hut|Math_on_the_Move|GameShark|Fisherman|Formula_One|Formula_1|Fox_Sports|Barbie|Fishing|Tennis)')
         self.game_endpoints = []
-        self.filtred_endpoints = []
-        self.download_endpoints = []
+        self.filtered_endpoints = []
+        self.games_meta = []
 
     def main(self):
         """Run all the functions"""
         self.get_data()
         self.filter_endpoints()
-        self.get_game_ids()
-        self.build_download_links()
+        self.build_game_meta()
 
     def get_data(self):
-        """Get HTML data from a site
-        args:
-            url: the url to the site we're scraping
-        """
+        """Scrape HTML data from emuparadise and return a list of games"""
 
         try:
             r = requests.get(self.url)
@@ -63,48 +57,50 @@ class ScrapeEmuparadise():
         return True
 
     def filter_endpoints(self):
-        """Remove unwanted links from the list
-        args:
-            endpoints: the list of endpoints received from the scrape
-        """
+        """Remove unwanted links from the list of scraped endpoints"""
 
         # iterate over the list of endpoints and check against the regular
         # expression above. If no match is found, add the endpoint to the
         # filtered list.
         for e in self.game_endpoints:
-            match = self.trash_reg.search(e.get('href'))
+            link = e.get('href')
+            match = self.trash_reg.search(link)
             if not match:
-                self.filtred_endpoints.append(e.get('href'))
+                self.filtered_endpoints.append(link)
         return True
 
-    def get_game_ids(self):
-        """Split each enpoint down to its unique game id and append
-        the ID to a new array
-        args:
-            endpoints: the filtered list of game endpoints
-        """
+    def build_game_meta(self):
+        """Turn each filtered enpoint into a dict"""
 
-        for e in self.filtred_endpoints:
+        for e in self.filtered_endpoints:
             arr = e.split('/')
-            self.game_ids.append(arr[-1])
+            download_endpoint = f"{self.server}roms/get-download.php?gid={arr[-1]}&test=true"
+            meta = {'system': arr[1], 'name': arr[2], 'id': arr[3], 'download_endpoint': download_endpoint}
+            self.games_meta.append(meta)
 
-        return True
+    def download_game(self, game_dict, chunk_size=128):
 
-    def build_download_links(self):
-        """Make download links for each game ID
-        args:
-            game_ids: The list of ids stripped from each endpoint
-        """
+        url = game_dict.get('download_endpoint')
+        headers = {'referer': self.server}
+        save_path = f"./files/{game_dict.get('name')}.7z"
 
-        for id in self.game_ids:
-            download_url = f"{self.server}roms/get-download.php?gid={id}&test=true"
-            self.download_endpoints.append(download_url)
-        return True
+        try:
+            r = requests.get(url, stream=True, headers=headers)
+            with open(save_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=chunk_size):
+                    f.write(chunk)
+        except Exception as e:
+            raise e
 
 
 if __name__ == "__main__":
     scrape = ScrapeEmuparadise(
         url='https://www.emuparadise.me/Sony_Playstation_ISOs/List-All-Titles/2')
     scrape.main()
-    for e in scrape.download_endpoints:
-        print(e)
+
+    i = 0
+    for m in scrape.games_meta:
+        print(m)
+        if i == 100:
+            scrape.download_game(m)
+        i += 1
