@@ -23,8 +23,8 @@ class ScrapeEmuparadise():
     def main(self):
         """Run all the functions"""
         self.get_data()
-        self.filter_endpoints()
-        self.build_game_meta()
+        self.generator_handler(meth=self.filter_endpoints())
+        self.generator_handler(meth=self.build_game_meta())
 
     def get_data(self):
         """Scrape HTML data from emuparadise and return a list of games"""
@@ -63,7 +63,7 @@ class ScrapeEmuparadise():
             match = self.trash_reg.search(link)
             if not match:
                 self.filtered_endpoints.append(link)
-        return True
+            yield match
 
     def build_game_meta(self):
         """Turn each filtered enpoint into a dict"""
@@ -73,6 +73,7 @@ class ScrapeEmuparadise():
             download_endpoint = f"{self.server}roms/get-download.php?gid={arr[-1]}&test=true"
             meta = {'system': arr[1], 'name': arr[2], 'id': arr[3], 'download_endpoint': download_endpoint}
             self.games_meta.append(meta)
+            yield True
 
     def download_game(self, game_dict, chunk_size=128):
 
@@ -88,6 +89,17 @@ class ScrapeEmuparadise():
         except Exception as e:
             raise e
 
+    def generator_handler(self, meth):
+        """Loop over generators methods
+        I'm using this method to help with large list sizes. Shouldn't be
+        needed but you never know.
+
+        args:
+            meth: The method we're running
+        """
+        for x in meth:
+            pass
+
 
 if __name__ == "__main__":
     scrape = ScrapeEmuparadise(
@@ -95,8 +107,8 @@ if __name__ == "__main__":
     scrape.main()
 
     i = 0
-    for m in scrape.games_meta:
-        print(m)
+    # for m in scrape.games_meta:
+    #     print(m)
         # scrape.download_game(m)
         # if i == 100:
         #     scrape.download_game(m)
