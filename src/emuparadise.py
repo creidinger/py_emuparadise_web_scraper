@@ -33,7 +33,6 @@ class ScrapeEmuparadise():
             r = requests.get(self.url)
         except Exception as e:
             raise e
-            return False
         else:
             print('Scrape success')
 
@@ -42,17 +41,14 @@ class ScrapeEmuparadise():
             bs = BeautifulSoup(r.text, 'html.parser')
         except Exception as e:
             raise e
-            return False
 
         try:
             # find all <a> tages that link to a game
             self.game_endpoints = bs.find_all('a', {'class', 'gamelist'})
         except AttributeError as e:
             raise AttributeError('Invalid attribute')
-            return False
         except Exception as e:
             raise e
-            return False
 
         return True
 
@@ -102,3 +98,6 @@ if __name__ == "__main__":
     for m in scrape.games_meta:
         print(m)
         # scrape.download_game(m)
+        # if i == 100:
+        #     scrape.download_game(m)
+        # i += 1
